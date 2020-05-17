@@ -115,10 +115,20 @@ def encrypt(infp, outfp, password):
         pipe1.communicate()
 
 
+def encrypt_no_compress(infp, outfp, password):
+    with EncryptPipe(infp, outfp, password=password) as pipe1:
+        pipe1.communicate()
+
+
 def decrypt(infp, outfp, password):
     with DecryptPipe(infp, password=password) as pipe1, \
          InflatePipe(pipe1.stdout, outfp) as pipe2:
         pipe2.communicate()
+        pipe1.communicate()
+
+
+def decrypt_no_compress(infp, outfp, password):
+    with DecryptPipe(infp, outfp, password=password) as pipe1:
         pipe1.communicate()
 
 
@@ -133,16 +143,32 @@ def encrypt_decrypt_test(infp, outfp, password):
         pipe1.communicate()
 
 
+def encrypt_decrypt_test_no_compress(infp, outfp, password):
+    with EncryptPipe(infp, password=password) as pipe1, \
+            DecryptPipe(pipe1.stdout, outfp, password=password) as pipe2:
+        pipe2.communicate()
+        pipe1.communicate()
+
+
 if __name__ == '__main__':
-    if len(sys.argv) == 3 and sys.argv[1] in ('-d', '-e', '-t'):
+    if len(sys.argv) == 3 and sys.argv[1] in (
+            '-d', '-D', '-e', '-E', '-t', '-T'):
         with open(sys.argv[2]) as passfp:
             password = passfp.read().strip()
 
         if sys.argv[1] == '-d':
             decrypt(sys.stdin.buffer, sys.stdout.buffer, password)
+        elif sys.argv[1] == '-D':
+            decrypt_no_compress(sys.stdin.buffer, sys.stdout.buffer, password)
         elif sys.argv[1] == '-e':
             encrypt(sys.stdin.buffer, sys.stdout.buffer, password)
+        elif sys.argv[1] == '-E':
+            encrypt_no_compress(sys.stdin.buffer, sys.stdout.buffer, password)
         elif sys.argv[1] == '-t':
-            encrypt_decrypt_test(sys.stdin.buffer, sys.stdout.buffer, password)
+            encrypt_decrypt_test(
+                sys.stdin.buffer, sys.stdout.buffer, password)
+        elif sys.argv[1] == '-T':
+            encrypt_decrypt_test_no_compress(
+                sys.stdin.buffer, sys.stdout.buffer, password)
     else:
         assert False, sys.argv
