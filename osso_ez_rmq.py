@@ -104,7 +104,10 @@ class _BaseRmqChannel(object):
     def close(self):
         if self._channel:
             log.info('Disconnecting RMQ %s', self._channel)
-            self._channel.stop_consuming()
+            try:
+                self._channel.stop_consuming()
+            except ConnectionClosed:
+                log.warning('Already closed...')
             self._channel.connection.close()
             self._channel = None
 
